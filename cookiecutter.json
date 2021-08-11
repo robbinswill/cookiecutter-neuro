@@ -4,6 +4,6 @@
   "project_name": "My Neuro Project",
   "project_slug": "{{ cookiecutter.project_name.lower().replace(' ', '-') }}",
   "pkg_name": "{{ cookiecutter.project_slug.replace('-', '') }}",
-  "BIDS_path": "",
-  "Staging_path": ""
+  "bids_path": "",
+  "staging_path": ""
 }
