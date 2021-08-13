@@ -1,9 +1,10 @@
 {
-  "project_owner": "",
-  "owner_email": "",
+  "project_owner": "My name",
+  "owner_email": "My email",
   "project_name": "My Neuro Project",
   "project_slug": "{{ cookiecutter.project_name.lower().replace(' ', '-') }}",
   "pkg_name": "{{ cookiecutter.project_slug.replace('-', '') }}",
-  "bids_path": "",
-  "staging_path": ""
+  "Project description": "My Project Description",
+  "bids_path": "Path to your desired BIDS root",
+  "staging_path": "Path to your desired staging-folder root"
 }

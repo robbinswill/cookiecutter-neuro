@@ -1,0 +1,7 @@
+raw:
+  _target_: mne.io.read_raw_brainvision
+  eog: []
+  preload: False
+
+line_freq: 60
+data_type: 'eeg'
