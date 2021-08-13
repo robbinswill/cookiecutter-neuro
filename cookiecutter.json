@@ -5,6 +5,7 @@
   "project_slug": "{{ cookiecutter.project_name.lower().replace(' ', '-') }}",
   "pkg_name": "{{ cookiecutter.project_slug.replace('-', '') }}",
   "Project description": "My Project Description",
+  "project_path": "Path to this project",
   "bids_path": "Path to your desired BIDS root",
   "staging_path": "Path to your desired staging-folder root"
 }

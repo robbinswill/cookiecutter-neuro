@@ -3,6 +3,9 @@ This script retrieves all input files from "Staging", then moves them to the BID
 Currently, this script assumes that all inputs are in the "Staging" folder
 """
 
+import typer
+app = typer.Typer(help='BIDS data generation interface')
+
 import os
 import json
 
@@ -17,8 +20,6 @@ from omegaconf import DictConfig, OmegaConf
 from hydra import compose, initialize_config_dir
 from hydra.utils import call
 
-import typer
-app = typer.Typer(help='BIDS data generation interface')
 
 # find .env automagically by walking up directories until it's found
 dotenv_path = find_dotenv()
