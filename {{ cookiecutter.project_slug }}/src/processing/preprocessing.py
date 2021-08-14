@@ -1,22 +1,16 @@
 """
 This script contains the preprocessing logic
 """
-import mne.io
+
 import typer
 app = typer.Typer(help='Data preprocessing interface')
 
 import os
-import json
 from dotenv import find_dotenv, load_dotenv
 from pathlib import Path
-from bids import BIDSLayout
-from nipype.interfaces.io import BIDSDataGrabber
-from nipype.pipeline import Node, MapNode, Workflow
+from nipype import Function, Node
 
-from omegaconf import DictConfig, OmegaConf
-from hydra import compose, initialize_config_dir
-from hydra.utils import call
-
+#todo could probably move these into config:
 
 # find .env automagically by walking up directories until it's found
 dotenv_path = find_dotenv()
@@ -27,8 +21,24 @@ STAGING_ROOT = Path(os.getenv("STAGING"))
 DATASET_ROOT = Path(os.getenv("DATASET"))
 PROJECT_ROOT = Path(os.getenv("PROJECT"))
 
-initialize_config_dir(config_dir=PROJECT_ROOT.joinpath('src', 'conf').__str__())
-cfg = compose("config.yaml")
+
+def _get_raw(project_root: str, dataset_root: str, sub: str):
+    """
+    Returns the MNE Raw object based on the given subject ID
+    """
+
+    from bids import BIDSLayout
+    from omegaconf import DictConfig, OmegaConf
+    from hydra import compose, initialize_config_dir
+    from hydra.utils import call
+
+    initialize_config_dir(config_dir=project_root)
+    cfg = compose("config.yaml")
+
+    layout = BIDSLayout(root=dataset_root)
+    raw_file = layout.get(subject=sub, extension=cfg['raw_extension'], suffix=cfg['data_type'],
+                          return_type='filename')[0]
+    return call(cfg.raw, vhdr_fname=raw_file)
 
 
 @app.command()
@@ -36,14 +46,16 @@ def preprocess_subject(sub: str):
     """
     Launch preprocessing step for the given subject
     """
-    layout = BIDSLayout(root=DATASET_ROOT.joinpath('raw_data').__str__())
-    # subject_ids = layout.get(return_type='id', target='subject')
-    # test_id = subject_ids[0]  # Gets sub-1 ID
-    raw_file = layout.get(subject=sub, extension=cfg['raw_extension'], suffix=cfg['data_type'],
-                          return_type='filename')[0]
-    raw = mne.io.read_raw_brainvision(raw_file)
 
-    
+    getraw = Node(Function(input_names=['project_root', 'dataset_root', 'sub'],
+                           output_names=['raw'],
+                           function=_get_raw),
+                  name='raw_node')
+    getraw.inputs.project_root = PROJECT_ROOT.joinpath('src', 'conf').__str__()
+    getraw.inputs.dataset_root = DATASET_ROOT.joinpath('raw_data').__str__()
+    getraw.inputs.sub = sub
+    getraw.run()
+    raw = getraw.result.outputs.raw
 
     # Later try reading in and filtering a raw object
     print('done')
