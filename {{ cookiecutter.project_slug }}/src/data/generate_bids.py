@@ -8,14 +8,14 @@ app = typer.Typer(help='BIDS data generation interface')
 
 import os
 import json
+from dotenv import find_dotenv, load_dotenv
+from pathlib import Path
 
 from mne_bids import BIDSPath, write_raw_bids
 import bids.config
 from bids import BIDSLayout
 bids.config.set_option('extension_initial_dot', True)
 
-from dotenv import find_dotenv, load_dotenv
-from pathlib import Path
 from omegaconf import DictConfig, OmegaConf
 from hydra import compose, initialize_config_dir
 from hydra.utils import call
