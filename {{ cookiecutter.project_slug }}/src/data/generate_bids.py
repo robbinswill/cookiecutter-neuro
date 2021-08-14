@@ -67,8 +67,6 @@ def new_subject():
     # Generate the MNE Raw object
     initialize_config_dir(config_dir=PROJECT_ROOT.joinpath('src', 'conf').__str__())
     cfg = compose("config.yaml")
-    test = STAGING_ROOT.joinpath(filename)
-    print(test)
     raw = call(cfg.raw, vhdr_fname=STAGING_ROOT.joinpath(filename))
     raw.info['line_freq'] = cfg['line_freq']
     raw.info['ch_name'] = cfg['data_type']
