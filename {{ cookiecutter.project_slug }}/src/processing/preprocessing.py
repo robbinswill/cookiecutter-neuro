@@ -22,8 +22,13 @@ class Preprocessing:
     To be used by the processing interface for implementing preprocessing steps
     """
     def __init__(self):
-        self.project_root = PROJECT_ROOT.joinpath('src', 'conf').__str__()
+        self.config_root = PROJECT_ROOT.joinpath('src', 'conf').__str__()
         self.dataset_root = DATASET_ROOT.joinpath('raw_data').__str__()
+
+
+    def preprocess(self, sub: str):
+        raw = self._get_raw(sub)
+        return raw
 
 
     def _get_raw(self, sub: str):
@@ -35,10 +40,10 @@ class Preprocessing:
         from hydra import compose, initialize_config_dir
         from hydra.utils import call
 
-        initialize_config_dir(config_dir=self.project_root)
+        initialize_config_dir(config_dir=self.config_root)
         cfg = compose("config.yaml")
 
         layout = BIDSLayout(root=self.dataset_root)
         raw_file = layout.get(subject=sub, extension=cfg['raw_extension'], suffix=cfg['data_type'],
                               return_type='filename')[0]
-        self.raw = call(cfg.raw, vhdr_fname=raw_file)
+        return call(cfg.raw, vhdr_fname=raw_file)
