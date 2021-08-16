@@ -1,6 +1,6 @@
 raw:
   _target_: mne.io.read_raw_brainvision
-  eog: []
+  eog: [64, 65]
   preload: False
 
 raw_extension: '.vhdr'

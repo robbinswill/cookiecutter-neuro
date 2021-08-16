@@ -8,6 +8,4 @@ pathlib.Path(project_dir).joinpath('.env').touch()
 # Write dataset, staging and project root paths to .env
 f = open('.env', 'a')
 f.write('PROJECT = {{ cookiecutter.project_path }}\n')
-f.write('DATASET = {{ cookiecutter.bids_path }}\n')
-f.write('STAGING = {{ cookiecutter.staging_path }}\n')
 f.close()
