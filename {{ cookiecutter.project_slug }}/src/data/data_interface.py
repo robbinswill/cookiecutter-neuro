@@ -1,120 +1,74 @@
 """
-Contains methods to create and query BIDS folders and metadata
+This script retrieves all input files from "Staging", then moves them to the BIDS-compliant "Dataset" folder.
+Currently, this script assumes that all inputs are in the "Staging" folder
 """
 
-from pathlib import Path
-import json
-import os
-
 import typer
+app = typer.Typer(help='Data generation interface')
+
+import data
+import os
+import json
 from dotenv import find_dotenv, load_dotenv
+from pathlib import Path
 
 from mne_bids import BIDSPath, write_raw_bids
 import bids.config
 from bids import BIDSLayout
 bids.config.set_option('extension_initial_dot', True)
 
-from omegaconf import DictConfig, OmegaConf
-from hydra import compose, initialize_config_dir
-from hydra.utils import call
 
+# find .env automagically by walking up directories until it's found
 dotenv_path = find_dotenv()
+# load up the entries as environment variables
 load_dotenv(dotenv_path)
 
+STAGING_ROOT = Path(os.getenv("STAGING"))
+DATASET_ROOT = Path(os.getenv("DATASET"))
 PROJECT_ROOT = Path(os.getenv("PROJECT"))
+PIPELINE_ROOT = Path(os.getenv("PIPELINE"))
 
 
-def create_bids_dataset(dataset_root: str):
+@app.command()
+def new_bids(dataset_root: str = typer.Option(..., prompt="Enter the root for the new BIDS dataset")):
     """
-    Creates a BIDS-compliant dataset at the given root, with the raw_data subfolder
-    and required metadata
+    Generate a new BIDS-compliant dataset
     """
-
-    # Create the raw_data subfolder and json file
-    Path(dataset_root).joinpath('raw_data').mkdir(exist_ok=True, parents=True)
-    Path(dataset_root).joinpath('raw_data', 'dataset_description.json').touch(exist_ok=True)
-
-    # Populate dataset_description.json
-    dataset_desc = {
-        'Name': '{{ cookiecutter.project_name }}',
-        'BIDSVersion': '1.6.0',
-        'DatasetType': 'raw'
-    }
-    with open(Path(dataset_root).joinpath('raw_data', 'dataset_description.json'), 'w') as f:
-        json.dump(dataset_desc, f, indent=2)
-    f.close()
-
-    # Add the BIDS root to the .env file
-    with open(PROJECT_ROOT.joinpath('.env'), 'w') as f:
-        f.write(f'DATASET = {dataset_root}\n')
-    f.close()
+    data.create_bids_dataset(dataset_root)
+    typer.echo(f"BIDS created at {dataset_root}")
 
 
-def set_bids_path(dataset_root: str):
+@app.command()
+def set_bids(dataset_root: str = typer.Option(..., prompt="Enter the root for current BIDS dataset")):
     """
-    Point this project to an already-existing BIDS dataset
+    Attach an already-existing BIDS dataset to this project
     """
-
-    # Add the BIDS root to the .env file
-    with open(PROJECT_ROOT.joinpath('.env'), 'w') as f:
-        f.write(f'DATASET = {dataset_root}\n')
-    f.close()
+    data.set_bids_path(dataset_root)
+    typer.echo(f"BIDS set at {dataset_root}")
 
 
-def get_bids_path():
+@app.command()
+def new_staging():
     """
-    Return the BIDS dataset root
+    Generates a new staging folder within the current project directory
     """
-    return Path(os.getenv("DATASET"))
+    data.create_staging_dir()
+    typer.echo("New staging folder created in the project directory")
 
 
-def create_staging_dir():
+@app.command()
+def set_staging(staging_root: str = typer.Option(..., prompt='Enter the root for a current staging folder')):
     """
-    Generate a directory for staging data inputs
-    This assumes you want to create a generic staging folder in the project folder (easy)
+    Attach an already-existing staging directory to this project
     """
-    staging_dir = PROJECT_ROOT.joinpath('{{ cookiecutter.project_slug }}_staging')
-    staging_dir.mkdir(exist_ok=True, parents=True)
-    with open(PROJECT_ROOT.joinpath('.env'), 'w') as f:
-        f.write(f'STAGING = {staging_dir}\n')
-    f.close()
+    data.set_staging_path(staging_root)
+    typer.echo(f"Staging folder set at {staging_root}")
 
 
-def set_staging_path(staging_root: str):
-    """
-    Set the STAGING env variable to an already-existing staging folder
-    """
-    with open(PROJECT_ROOT.joinpath('.env'), 'w') as f:
-        f.write(f'STAGING = {staging_root}\n')
-    f.close()
-
-
-def get_staging_path():
-    """
-    Return the path to the staging folder
-    """
-    return Path(os.getenv("STAGING"))
-
-
-def add_bids_subject(filename: str):
+@app.command()
+def new_subject(filename: str = typer.Option(..., prompt='Enter the required brain-imaging filename, as per the mne.io.read_raw_ spec')):
     """
     Add a subject to this project's BIDS dataset
     """
-
-    # Get the number of subjects currently in the BIDS dataset
-    layout = BIDSLayout(root=get_bids_path().joinpath('raw_data').__str__())
-    num_subs = len(layout.get(return_type='id', target='subject'))
-    new_sub_id = num_subs + 1
-
-    # Generate the MNE Raw object
-    initialize_config_dir(config_dir=PROJECT_ROOT.joinpath('src', 'conf').__str__())
-    cfg = compose("config.yaml")
-    raw = call(cfg.raw, vhdr_fname=get_bids_path().joinpath(filename))
-    raw.info['line_freq'] = cfg['line_freq']
-    raw.info['ch_name'] = cfg['data_type']
-
-    # Generate the BIDSPath and write
-    bids_path = BIDSPath(subject=new_sub_id, root=get_bids_path().joinpath('raw_data').__str__(),
-                         datatype=cfg['data_type'])
-    write_raw_bids(raw, bids_path, overwrite=True)
-
+    data.add_bids_subject(filename)
+    typer.echo("Subject added")

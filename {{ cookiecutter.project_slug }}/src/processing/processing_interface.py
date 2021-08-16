@@ -7,7 +7,10 @@ app = typer.Typer(help='Data preprocessing interface')
 
 from nipype import Function, Node
 from .processing import Preprocessing
-from ..data import data
+from ..data import data_interface
+
+
+
 
 
 @app.command()
