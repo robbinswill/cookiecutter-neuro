@@ -2,7 +2,17 @@
 Contains all of the preprocessing logic for the {{ cookiecutter.project_name }} project
 """
 
+from pathlib import Path
+import os
+
+from dotenv import find_dotenv, load_dotenv
+
 from nipype.interfaces.base import BaseInterfaceInputSpec, BaseInterface, TraitedSpec, Str, File
+
+dotenv_path = find_dotenv()
+load_dotenv(dotenv_path)
+
+PROJECT_ROOT = Path(os.getenv("PROJECT"))
 
 
 def _get_raw(sub: str):
@@ -56,3 +66,18 @@ class Preprocessing(BaseInterface):
 
     def _list_outputs(self):
         return {'out_raw': self.output_spec.out_raw}
+
+
+def create_derivatives_dataset(pipeline_root: str):
+    """
+    Create a pipeline subfolder in the BIDS dataset
+    """
+
+    # Create the pipeline directory
+    pipeline_dir = PROJECT_ROOT.joinpath(pipeline_root)
+    pipeline_dir.mkdir(exist_ok=True, parents=True)
+
+    # Add the pipeline directory to .env
+    with open(PROJECT_ROOT.joinpath('.env'), 'w') as f:
+        f.write(f'PIPELINE = {pipeline_dir}\n')
+    f.close()
