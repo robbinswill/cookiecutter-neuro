@@ -6,27 +6,7 @@ Currently, this script assumes that all inputs are in the "Staging" folder
 import typer
 app = typer.Typer(help='Data generation interface')
 
-import data
-import os
-import json
-from dotenv import find_dotenv, load_dotenv
-from pathlib import Path
-
-from mne_bids import BIDSPath, write_raw_bids
-import bids.config
-from bids import BIDSLayout
-bids.config.set_option('extension_initial_dot', True)
-
-
-# find .env automagically by walking up directories until it's found
-dotenv_path = find_dotenv()
-# load up the entries as environment variables
-load_dotenv(dotenv_path)
-
-STAGING_ROOT = Path(os.getenv("STAGING"))
-DATASET_ROOT = Path(os.getenv("DATASET"))
-PROJECT_ROOT = Path(os.getenv("PROJECT"))
-PIPELINE_ROOT = Path(os.getenv("PIPELINE"))
+from . import data
 
 
 @app.command()
@@ -39,7 +19,7 @@ def new_bids(dataset_root: str = typer.Option(..., prompt="Enter the root for th
 
 
 @app.command()
-def set_bids(dataset_root: str = typer.Option(..., prompt="Enter the root for current BIDS dataset")):
+def set_bids(dataset_root: str = typer.Option(..., prompt="Enter the root for existing BIDS dataset")):
     """
     Attach an already-existing BIDS dataset to this project
     """

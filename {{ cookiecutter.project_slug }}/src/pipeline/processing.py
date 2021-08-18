@@ -4,15 +4,16 @@ Contains all of the preprocessing logic for the {{ cookiecutter.project_name }} 
 
 from pathlib import Path
 import os
-
-from dotenv import find_dotenv, load_dotenv
+import json
 
 from nipype.interfaces.base import BaseInterfaceInputSpec, BaseInterface, TraitedSpec, Str, File
 
-dotenv_path = find_dotenv()
-load_dotenv(dotenv_path)
-
-PROJECT_ROOT = Path(os.getenv("PROJECT"))
+from omegaconf import OmegaConf, open_dict
+from hydra import compose, initialize
+from hydra.utils import call
+from hydra.core.global_hydra import GlobalHydra
+GlobalHydra.instance().clear()
+initialize(config_path='../conf/')
 
 
 def _get_raw(sub: str):
@@ -74,10 +75,32 @@ def create_derivatives_dataset(pipeline_root: str):
     """
 
     # Create the pipeline directory
-    pipeline_dir = PROJECT_ROOT.joinpath(pipeline_root)
+    cfg = compose('env.yaml')
+    DATASET_ROOT = Path(cfg.DATASET)
+    pipeline_dir = DATASET_ROOT.joinpath('derivatives', pipeline_root)
     pipeline_dir.mkdir(exist_ok=True, parents=True)
 
     # Add the pipeline directory to .env
-    with open(PROJECT_ROOT.joinpath('.env'), 'w') as f:
-        f.write(f'PIPELINE = {pipeline_dir}\n')
+    PROJECT_ROOT = Path(cfg.PROJECT)
+    OmegaConf.set_struct(cfg, True)
+    with open_dict(cfg):
+        cfg.PIPELINE = pipeline_dir.__str__()
+    with open(PROJECT_ROOT.joinpath('src', 'conf', 'env.yaml'), 'w') as fp:
+        OmegaConf.save(config=cfg, f=fp.name)
+    fp.close()
+
+    # Create dataset_description.json for this pipeline
+    deriv_data = {'Name': pipeline_root + ' outputs',
+                  'BIDSVersion': '1.6.0',
+                  'DatasetType': 'derivative',
+                  'GeneratedBy': [
+                      {'Name': pipeline_root}
+                  ],
+                  'SourceDatasets': [
+                      {'URL': DATASET_ROOT.joinpath('raw_data').__str__()}
+                  ]}
+    PIPELINE_ROOT = Path(cfg.PIPELINE)
+    with open(PIPELINE_ROOT.joinpath('dataset_description.json'), 'w') as f:
+        json.dump(deriv_data, f, indent=2)
     f.close()
+

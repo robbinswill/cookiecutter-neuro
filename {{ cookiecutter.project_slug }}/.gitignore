@@ -7,14 +7,9 @@
 
 # If the BIDS dataset and/or staging directories are in your project, don't forget to add them to .gitignore so
 # they don't get uploaded to version control
-Staging/
-Dataset/
 
 # Jupyter/IPython related things
 .ipynb_checkpoints/
-
-# DotEnv configuration
-.env
 
 # __pycache__
 **/__pycache__

@@ -6,7 +6,7 @@ import typer
 app = typer.Typer(help='Preprocessing interface')
 
 from nipype import Function, Node
-import processing
+from . import processing
 
 
 @app.command()
@@ -28,6 +28,7 @@ def preprocess_subject(sub: str):
     Launch preprocessing step for the given subject
     """
 
+    # Assuming we are running test-pipeline
     getraw = processing.Preprocessing(
         sub_id=sub,
     )

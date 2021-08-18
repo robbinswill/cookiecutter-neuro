@@ -2,13 +2,13 @@
 Driver script for cookiecutter-neuro. Provides a CLI for users.
 """
 
-from src.data import data_interface
-from src.processing import processing_interface
+from src.data.data_interface import app as data_app
+from src.pipeline.processing_interface import app as proc_app
 
 import typer
 app = typer.Typer(help='{{ cookiecutter.project_name }} main interface')
-app.add_typer(data_interface.app, name='data')
-app.add_typer(processing_interface.app, name='proc')
+app.add_typer(data_app, name='data')
+app.add_typer(proc_app, name='proc')
 
 
 if __name__ == '__main__':

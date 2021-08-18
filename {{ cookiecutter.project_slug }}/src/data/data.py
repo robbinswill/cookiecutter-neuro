@@ -6,21 +6,17 @@ from pathlib import Path
 import json
 import os
 
-from dotenv import find_dotenv, load_dotenv
-
 from mne_bids import BIDSPath, write_raw_bids
 import bids.config
 from bids import BIDSLayout
 bids.config.set_option('extension_initial_dot', True)
 
-from omegaconf import DictConfig, OmegaConf
-from hydra import compose, initialize_config_dir
+from omegaconf import OmegaConf, open_dict
+from hydra import compose, initialize
 from hydra.utils import call
-
-dotenv_path = find_dotenv()
-load_dotenv(dotenv_path)
-
-PROJECT_ROOT = Path(os.getenv("PROJECT"))
+from hydra.core.global_hydra import GlobalHydra
+GlobalHydra.instance().clear()
+initialize(config_path='../conf/')
 
 
 def create_bids_dataset(dataset_root: str):
@@ -44,9 +40,14 @@ def create_bids_dataset(dataset_root: str):
     f.close()
 
     # Add the BIDS root to the .env file
-    with open(PROJECT_ROOT.joinpath('.env'), 'w') as f:
-        f.write(f'DATASET = {dataset_root}\n')
-    f.close()
+    cfg = compose('env.yaml')
+    PROJECT_ROOT = cfg.PROJECT
+    OmegaConf.set_struct(cfg, True)
+    with open_dict(cfg):
+        cfg.DATASET = dataset_root
+    with open(Path(PROJECT_ROOT).joinpath('src', 'conf', 'env.yaml'), 'w') as fp:
+        OmegaConf.save(config=cfg, f=fp.name)
+    fp.close()
 
 
 def set_bids_path(dataset_root: str):
@@ -55,16 +56,22 @@ def set_bids_path(dataset_root: str):
     """
 
     # Add the BIDS root to the .env file
-    with open(PROJECT_ROOT.joinpath('.env'), 'w') as f:
-        f.write(f'DATASET = {dataset_root}\n')
-    f.close()
+    cfg = compose('env.yaml')
+    PROJECT_ROOT = cfg.PROJECT
+    OmegaConf.set_struct(cfg, True)
+    with open_dict(cfg):
+        cfg.DATASET = dataset_root
+    with open(Path(PROJECT_ROOT).joinpath('src', 'conf', 'env.yaml'), 'w') as fp:
+        OmegaConf.save(config=cfg, f=fp.name)
+    fp.close()
 
 
 def get_bids_path():
     """
     Return the BIDS dataset root
     """
-    return Path(os.getenv("DATASET"))
+    cfg = compose('env.yaml')
+    return cfg.DATASET
 
 
 def create_staging_dir():
@@ -72,27 +79,39 @@ def create_staging_dir():
     Generate a directory for staging data inputs
     This assumes you want to create a generic staging folder in the project folder (easy)
     """
-    staging_dir = PROJECT_ROOT.joinpath('{{ cookiecutter.project_slug }}_staging')
+    cfg = compose('env.yaml')
+    PROJECT_ROOT = cfg.PROJECT
+
+    staging_dir = Path(PROJECT_ROOT).joinpath('{{ cookiecutter.project_slug }}_staging')
     staging_dir.mkdir(exist_ok=True, parents=True)
-    with open(PROJECT_ROOT.joinpath('.env'), 'w') as f:
-        f.write(f'STAGING = {staging_dir}\n')
-    f.close()
+    OmegaConf.set_struct(cfg, True)
+    with open_dict(cfg):
+        cfg.STAGING = staging_dir.__str__()
+    with open(Path(PROJECT_ROOT).joinpath('src', 'conf', 'env.yaml'), 'w') as fp:
+        OmegaConf.save(config=cfg, f=fp.name)
+    fp.close()
 
 
 def set_staging_path(staging_root: str):
     """
     Set the STAGING env variable to an already-existing staging folder
     """
-    with open(PROJECT_ROOT.joinpath('.env'), 'w') as f:
-        f.write(f'STAGING = {staging_root}\n')
-    f.close()
+    cfg = compose('env.yaml')
+    PROJECT_ROOT = cfg.PROJECT
+    OmegaConf.set_struct(cfg, True)
+    with open_dict(cfg):
+        cfg.STAGING = staging_root
+    with open(Path(PROJECT_ROOT).joinpath('src', 'conf', 'env.yaml'), 'w') as fp:
+        OmegaConf.save(config=cfg, f=fp.name)
+    fp.close()
 
 
 def get_staging_path():
     """
     Return the path to the staging folder
     """
-    return Path(os.getenv("STAGING"))
+    cfg = compose('env.yaml')
+    return cfg.STAGING
 
 
 def add_bids_subject(filename: str):
@@ -101,19 +120,19 @@ def add_bids_subject(filename: str):
     """
 
     # Get the number of subjects currently in the BIDS dataset
-    layout = BIDSLayout(root=get_bids_path().joinpath('raw_data').__str__())
+    layout = BIDSLayout(root=Path(get_bids_path()).joinpath('raw_data').__str__())
     num_subs = len(layout.get(return_type='id', target='subject'))
     new_sub_id = num_subs + 1
 
     # Generate the MNE Raw object
-    initialize_config_dir(config_dir=PROJECT_ROOT.joinpath('src', 'conf').__str__())
-    cfg = compose("config.yaml")
-    raw = call(cfg.raw, vhdr_fname=get_bids_path().joinpath(filename))
-    raw.info['line_freq'] = cfg['line_freq']
-    raw.info['ch_name'] = cfg['data_type']
+    conf = compose("config.yaml")
+
+    raw = call(conf.raw, vhdr_fname=Path(get_staging_path()).joinpath(filename))
+    raw.info['line_freq'] = conf['line_freq']
+    raw.info['ch_name'] = conf['data_type']
 
     # Generate the BIDSPath and write
-    bids_path = BIDSPath(subject=new_sub_id, root=get_bids_path().joinpath('raw_data').__str__(),
-                         datatype=cfg['data_type'])
+    bids_path = BIDSPath(subject=new_sub_id.__str__(), root=Path(get_bids_path()).joinpath('raw_data').__str__(),
+                         datatype=conf['data_type'])
     write_raw_bids(raw, bids_path, overwrite=True)
 
