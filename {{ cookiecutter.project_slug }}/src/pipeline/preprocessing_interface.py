@@ -20,16 +20,16 @@ initialize(config_path='../conf/')
 
 
 @app.command()
-def new_pipeline():
+def new_pipeline(pipeline_name: str = typer.Option(..., prompt='Enter a name for the new pipeline'),
+                 pipeline_desc: str = typer.Option(..., prompt='Provide a short description of the pipeline')):
     """
     Generate a new preprocessing pipeline with a subfolder in the BIDS dataset
     """
 
-    # For now, we generate a generic pipeline called "test-pipeline"
     # Need to figure out how to manage multiple pipelines
     # Also need functionality to choose which pipeline to execute
-    create_derivatives_dataset('test-pipeline')
-    typer.echo(f'test-pipeline derivative subfolder created in BIDS dataset')
+    create_derivatives_dataset(pipeline_name, pipeline_desc)
+    typer.echo(f'{pipeline_name} derivative subfolder created in BIDS dataset')
 
 
 @app.command()

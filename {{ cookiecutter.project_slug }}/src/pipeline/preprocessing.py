@@ -64,7 +64,7 @@ class Preprocessing(BaseInterface):
         return {'out_file': self.inputs.out_file}
 
 
-def create_derivatives_dataset(pipeline_root: str):
+def create_derivatives_dataset(pipeline_root: str, pipeline_desc: str):
     """
     Create a pipeline subfolder in the BIDS dataset
     """
@@ -90,7 +90,7 @@ def create_derivatives_dataset(pipeline_root: str):
                   'DatasetType': 'derivative',
                   'GeneratedBy': [
                       {'Name': pipeline_root,
-                       'Desc': 'test'}
+                       'Desc': pipeline_desc}
                   ],
                   'SourceDatasets': [
                       {'URL': DATASET_ROOT.joinpath('raw_data').__str__()}
