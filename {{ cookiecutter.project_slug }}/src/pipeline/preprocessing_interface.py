@@ -44,15 +44,12 @@ def preprocess_subject(sub: str = typer.Option(..., prompt='Enter subject ID'),
     pipeline_root = cfg[pipeline]
 
     cfg = compose('config.yaml')
-    bids_deriv_path = BIDSPath(subject=sub, root=pipeline_root, datatype=cfg.data_type)
+    bids_deriv_path = BIDSPath(subject=sub, root=pipeline_root, datatype=cfg.raw_params.data_type)
 
-    with open(Path(pipeline_root).joinpath('dataset_description.json')) as fp:
-        json_file = json.load(fp)
-    fp.close()
     filepath = Path(bids_deriv_path.__str__() + '_desc-'
-                    + json_file['GeneratedBy'][0]['Desc'] + '_' + cfg.data_type + '.fif')
+                    + pipeline + '_' + cfg.raw_params.data_type + '.fif')
 
 
     # Assuming we are running test-pipeline
     pre_raw = Node(Preprocessing(sub_id=sub, out_file=filepath), name='preproc_node')
-    result = pre_raw.run()
+    pre_raw.run()

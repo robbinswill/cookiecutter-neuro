@@ -5,6 +5,7 @@ Contains all of the preprocessing logic for the {{ cookiecutter.project_name }} 
 from pathlib import Path
 import json
 
+import mne
 from nipype.interfaces.base import BaseInterfaceInputSpec, BaseInterface, TraitedSpec, Str, File
 
 from omegaconf import OmegaConf, open_dict
@@ -30,12 +31,26 @@ def _preprocessing(sub, out_file):
     cfg = compose('env.yaml')
     dataset_root = cfg.DATASET
 
+    # Load MNE Raw file
     cfg = compose("config.yaml")
+    # Can we define a different root when stringing pipelines together?
     layout = BIDSLayout(root=Path(dataset_root).joinpath('raw_data').__str__())
     raw_file = layout.get(subject=sub, extension=cfg.raw_params.raw_extension, suffix=cfg.raw_params.data_type,
                           return_type='filename')[0]
-    raw_to_save = call(cfg.read_raw, vhdr_fname=raw_file)
-    raw_to_save.save(out_file.__str__())
+    raw_load = call(cfg.read_raw, vhdr_fname=raw_file, preload=True)
+
+    # Filter loaded MNE Raw file
+    pre_cfg = cfg.preprocessing_params
+    raw_filt = raw_load.copy().filter(l_freq=pre_cfg.l_freq, h_freq=pre_cfg.h_freq,
+                                      l_trans_bandwidth=pre_cfg.l_trans_bandwidth,
+                                      h_trans_bandwidth=pre_cfg.h_trans_bandwidth,
+                                      filter_length=pre_cfg.filter_length,
+                                      method=pre_cfg.method,
+                                      picks=mne.pick_types(raw_load.info, eeg=True, eog=True),
+                                      n_jobs=pre_cfg.n_jobs)
+
+    # Save filtered MNE Raw file
+    raw_filt.save(out_file.__str__())
 
 
 class PreprocessingInputSpec(BaseInterfaceInputSpec):

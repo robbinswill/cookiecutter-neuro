@@ -9,4 +9,10 @@ raw_params:
   data_type: 'eeg'
 
 preprocessing_params:
-
+  l_freq: 0.1
+  h_freq: 30.0
+  l_trans_bandwidth: 'auto'
+  h_trans_bandwidth: 'auto'
+  filter_length: 'auto'
+  method: 'fft'
+  n_jobs: 1
