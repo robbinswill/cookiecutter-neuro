@@ -1,8 +1,12 @@
-raw:
+read_raw:
   _target_: mne.io.read_raw_brainvision
   eog: [64, 65]
   preload: False
 
-raw_extension: '.vhdr'
-line_freq: 60
-data_type: 'eeg'
+raw_params:
+  raw_extension: '.vhdr'
+  line_freq: 60
+  data_type: 'eeg'
+
+preprocessing_params:
+

@@ -127,12 +127,12 @@ def add_bids_subject(filename: str):
     # Generate the MNE Raw object
     conf = compose("config.yaml")
 
-    raw = call(conf.raw, vhdr_fname=Path(get_staging_path()).joinpath(filename))
-    raw.info['line_freq'] = conf['line_freq']
-    raw.info['ch_name'] = conf['data_type']
+    raw = call(conf.read_raw, vhdr_fname=Path(get_staging_path()).joinpath(filename))
+    raw.info['line_freq'] = conf.raw_params.line_freq
+    raw.info['ch_name'] = conf.raw_params.data_type
 
     # Generate the BIDSPath and write
     bids_path = BIDSPath(subject=new_sub_id.__str__(), root=Path(get_bids_path()).joinpath('raw_data').__str__(),
-                         datatype=conf['data_type'])
+                         datatype=conf.raw_params.data_type)
     write_raw_bids(raw, bids_path, overwrite=True)
 

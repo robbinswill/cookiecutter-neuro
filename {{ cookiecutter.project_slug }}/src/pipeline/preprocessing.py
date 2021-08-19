@@ -32,9 +32,9 @@ def _preprocessing(sub, out_file):
 
     cfg = compose("config.yaml")
     layout = BIDSLayout(root=Path(dataset_root).joinpath('raw_data').__str__())
-    raw_file = layout.get(subject=sub, extension=cfg.raw_extension, suffix=cfg.data_type,
+    raw_file = layout.get(subject=sub, extension=cfg.raw_params.raw_extension, suffix=cfg.raw_params.data_type,
                           return_type='filename')[0]
-    raw_to_save = call(cfg.raw, vhdr_fname=raw_file)
+    raw_to_save = call(cfg.read_raw, vhdr_fname=raw_file)
     raw_to_save.save(out_file.__str__())
 
 
