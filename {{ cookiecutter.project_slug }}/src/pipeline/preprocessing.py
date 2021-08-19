@@ -10,48 +10,42 @@ from nipype.interfaces.base import BaseInterfaceInputSpec, BaseInterface, Traite
 
 from omegaconf import OmegaConf, open_dict
 from hydra import compose, initialize
-from hydra.utils import call
 from hydra.core.global_hydra import GlobalHydra
 GlobalHydra.instance().clear()
 initialize(config_path='../conf/')
 
 
-def _get_raw(sub: str):
+def _get_raw(sub: str, out_file):
     """
     Returns the MNE Raw object based on the given subject ID
     """
-    import os
-    from dotenv import find_dotenv, load_dotenv
+
     from pathlib import Path
 
     from bids import BIDSLayout
-    from omegaconf import DictConfig, OmegaConf
-    from hydra import compose, initialize_config_dir
+    from hydra import compose
     from hydra.utils import call
+    GlobalHydra.instance().clear()
+    initialize(config_path='../conf/')
 
-    dotenv_path = find_dotenv()
-    load_dotenv(dotenv_path)
+    cfg = compose('env.yaml')
+    dataset_root = cfg.DATASET
 
-    DATASET_ROOT = Path(os.getenv("DATASET"))
-    PROJECT_ROOT = Path(os.getenv("PROJECT"))
-    dataset_root = DATASET_ROOT.joinpath('raw_data').__str__()
-    project_root = PROJECT_ROOT.joinpath('src', 'conf').__str__()
-
-    initialize_config_dir(config_dir=project_root)
     cfg = compose("config.yaml")
-
-    layout = BIDSLayout(root=dataset_root)
-    raw_file = layout.get(subject=sub, extension=cfg['raw_extension'], suffix=cfg['data_type'],
+    layout = BIDSLayout(root=Path(dataset_root).joinpath('raw_data').__str__())
+    raw_file = layout.get(subject=sub, extension=cfg.raw_extension, suffix=cfg.data_type,
                           return_type='filename')[0]
-    return call(cfg.raw, vhdr_fname=raw_file)
+    raw_to_save = call(cfg.raw, vhdr_fname=raw_file)
+    raw_to_save.save(out_file.__str__())
 
 
 class PreprocessingInputSpec(BaseInterfaceInputSpec):
     sub_id = Str(mandatory=True, desc='The subject ID to preprocess')
+    out_file = File(desc='The raw file in .fif format')
 
 
 class PreprocessingOutputSpec(TraitedSpec):
-    out_raw = File(desc='The preprocesses MNE Raw file')
+    out_file = File(desc='The raw file in .fif format')
 
 
 class Preprocessing(BaseInterface):
@@ -61,12 +55,13 @@ class Preprocessing(BaseInterface):
     def _run_interface(self, runtime):
         # Call the Preprocessing logic here
         _get_raw(
-            self.inputs.sub_id
+            self.inputs.sub_id,
+            self.inputs.out_file
         )
         return runtime
 
     def _list_outputs(self):
-        return {'out_raw': self.output_spec.out_raw}
+        return {'out_file': self.inputs.out_file}
 
 
 def create_derivatives_dataset(pipeline_root: str):
@@ -94,7 +89,8 @@ def create_derivatives_dataset(pipeline_root: str):
                   'BIDSVersion': '1.6.0',
                   'DatasetType': 'derivative',
                   'GeneratedBy': [
-                      {'Name': pipeline_root}
+                      {'Name': pipeline_root,
+                       'Desc': 'test'}
                   ],
                   'SourceDatasets': [
                       {'URL': DATASET_ROOT.joinpath('raw_data').__str__()}
