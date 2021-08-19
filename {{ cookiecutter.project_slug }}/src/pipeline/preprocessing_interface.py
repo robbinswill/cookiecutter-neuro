@@ -7,7 +7,7 @@ app = typer.Typer(help='Preprocessing interface')
 
 import json
 from nipype import Function, Node
-from . import preprocessing
+from .preprocessing import Preprocessing, create_derivatives_dataset
 from bids import BIDSLayout
 from mne_bids import BIDSPath
 from pathlib import Path
@@ -28,7 +28,7 @@ def new_pipeline():
     # For now, we generate a generic pipeline called "test-pipeline"
     # Need to figure out how to manage multiple pipelines
     # Also need functionality to choose which pipeline to execute
-    preprocessing.create_derivatives_dataset('test-pipeline')
+    create_derivatives_dataset('test-pipeline')
     typer.echo(f'test-pipeline derivative subfolder created in BIDS dataset')
 
 
@@ -54,8 +54,6 @@ def preprocess_subject(sub: str):
 
 
     # Assuming we are running test-pipeline
-    getraw = preprocessing.Preprocessing(
-        sub_id=sub,
-        out_file=filepath
-    )
-    getraw.run()
+    pre_raw = Node(Preprocessing(sub_id=sub, out_file=filepath), name='preproc_node')
+    result = pre_raw.run()
+
