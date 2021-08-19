@@ -3,7 +3,6 @@ Contains all of the preprocessing logic for the {{ cookiecutter.project_name }} 
 """
 
 from pathlib import Path
-import os
 import json
 
 from nipype.interfaces.base import BaseInterfaceInputSpec, BaseInterface, TraitedSpec, Str, File
@@ -15,7 +14,7 @@ GlobalHydra.instance().clear()
 initialize(config_path='../conf/')
 
 
-def _get_raw(sub: str, out_file):
+def _preprocessing(sub, out_file):
     """
     Returns the MNE Raw object based on the given subject ID
     """
@@ -54,7 +53,7 @@ class Preprocessing(BaseInterface):
 
     def _run_interface(self, runtime):
         # Call the Preprocessing logic here
-        _get_raw(
+        _preprocessing(
             self.inputs.sub_id,
             self.inputs.out_file
         )
@@ -79,7 +78,7 @@ def create_derivatives_dataset(pipeline_root: str, pipeline_desc: str):
     PROJECT_ROOT = Path(cfg.PROJECT)
     OmegaConf.set_struct(cfg, True)
     with open_dict(cfg):
-        cfg.PIPELINE = pipeline_dir.__str__()
+        cfg[pipeline_root] = pipeline_dir.__str__()
     with open(PROJECT_ROOT.joinpath('src', 'conf', 'env.yaml'), 'w') as fp:
         OmegaConf.save(config=cfg, f=fp.name)
     fp.close()
@@ -95,8 +94,7 @@ def create_derivatives_dataset(pipeline_root: str, pipeline_desc: str):
                   'SourceDatasets': [
                       {'URL': DATASET_ROOT.joinpath('raw_data').__str__()}
                   ]}
-    PIPELINE_ROOT = Path(cfg.PIPELINE)
-    with open(PIPELINE_ROOT.joinpath('dataset_description.json'), 'w') as f:
+    with open(Path(cfg[pipeline_root]).joinpath('dataset_description.json'), 'w') as f:
         json.dump(deriv_data, f, indent=2)
     f.close()
 
