@@ -56,4 +56,3 @@ def preprocess_subject(sub: str):
     # Assuming we are running test-pipeline
     pre_raw = Node(Preprocessing(sub_id=sub, out_file=filepath), name='preproc_node')
     result = pre_raw.run()
-
