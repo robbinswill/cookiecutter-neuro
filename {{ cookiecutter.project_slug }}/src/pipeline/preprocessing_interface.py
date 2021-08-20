@@ -38,7 +38,6 @@ def preprocess_subject(sub: str = typer.Option(..., prompt='Enter subject ID'),
     Launch preprocessing step for the given subject
     """
 
-    # Assume we are running test-pipeline, with no tasks, sessions, runs, etc.
     # Retrieve desired filename for derivative outputs, to pass to preprocessing function
     cfg = compose('env.yaml')
     pipeline_root = cfg[pipeline]
